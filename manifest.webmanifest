@@ -1,0 +1,10 @@
+{
+  "name": "Logos",
+  "short_name": "Logos",
+  "description": "A library, research shelf and debate gym for philosophy.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f6f1e7",
+  "theme_color": "#f6f1e7",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

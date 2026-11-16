@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Logos</title>
+  <meta name="description" content="A personal library, research shelf and debate gym for going deep into philosophy. Free, public-domain sources only.">
+  <meta name="theme-color" content="#f6f1e7">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="#/" aria-label="Logos home">
+      <span class="brand-mark" aria-hidden="true">λ</span>
+      <span class="brand-name">Logos</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="#/library" data-nav="library">Library</a>
+      <a href="#/research" data-nav="research">Research</a>
+      <a href="#/debates" data-nav="debates">Debates</a>
+      <a href="#/notes" data-nav="notes">My notes</a>
+    </nav>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+  </header>
+
+  <main id="main" tabindex="-1"></main>
+
+  <footer class="footer">
+    <p>Logos uses only free, legal sources: public-domain books (Project Gutenberg, Standard Ebooks, Wikisource, Internet Archive) and open research (SEP, IEP, open-access journals).
+    Your reading status and notes are saved only in this browser. Use <a href="#/notes">My notes</a> to back them up.</p>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="data/books.js"></script>
+  <script src="data/research.js"></script>
+  <script src="data/debates.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
