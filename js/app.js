@@ -7,6 +7,7 @@
   const NOT_FREE = window.LOGOS_NOT_FREE || [];
   const RESEARCH = window.LOGOS_RESEARCH || [];
   const DEBATES = window.LOGOS_DEBATES || [];
+  const TEXTS = window.LOGOS_TEXTS || {}; // books downloaded into texts/ (see tools/fetch_texts.py)
   const bookById = Object.fromEntries(BOOKS.map((b) => [b.id, b]));
   const resById = Object.fromEntries(RESEARCH.map((r) => [r.id, r]));
   const debateById = Object.fromEntries(DEBATES.map((d) => [d.id, d]));
@@ -133,8 +134,12 @@
       </section>`;
   }
 
+  const readMins = (words) => { const m = Math.round(words / 230); return m < 90 ? m + " min" : Math.round(m / 60) + " h"; };
+  const progressOf = (id) => Math.round(((store.books[id] || {}).pos || 0) * 100);
+
   function bookCard(b) {
     const st = store.books[b.id] && store.books[b.id].status;
+    const pct = progressOf(b.id);
     return `
       <a class="card book" href="#/book/${b.id}">
         <div class="spine" style="background:${ERA_COLORS[b.era] || "#999"}"></div>
@@ -142,8 +147,8 @@
         <div class="author">${esc(b.author)} · ${yearLabel(b.year)}</div>
         <div class="sum">${esc(b.summary)}</div>
         <div class="meta">
-          <div>${b.schools.slice(0, 2).map((s) => `<span class="tag">${esc(s)}</span>`).join("")}</div>
-          ${st ? `<span class="status-pill status-${st}">${STATUS[st]}</span>` : ""}
+          <div>${TEXTS[b.id] ? `<span class="tag good" title="Full text inside Logos">📖 Read here</span>` : ""}${b.schools.slice(0, 1).map((s) => `<span class="tag">${esc(s)}</span>`).join("")}</div>
+          ${st ? `<span class="status-pill status-${st}">${STATUS[st]}${st === "reading" && pct ? " · " + pct + "%" : ""}</span>` : ""}
         </div>
       </a>`;
   }
@@ -155,7 +160,7 @@
     const f = {
       q: params.get("q") || "", era: params.get("era") || "", school: params.get("school") || "",
       topic: params.get("topic") || "", tradition: params.get("tradition") || "", status: params.get("status") || "",
-      author: params.get("author") || "", sort: params.get("sort") || "year"
+      author: params.get("author") || "", sort: params.get("sort") || "year", here: params.get("here") === "1"
     };
     const opt = (list, val, label) => `<option value="">${label}</option>` + list.map((x) => `<option ${x === val ? "selected" : ""}>${esc(x)}</option>`).join("");
 
@@ -182,6 +187,7 @@
           <option value="author" ${f.sort === "author" ? "selected" : ""}>By author</option>
           <option value="title" ${f.sort === "title" ? "selected" : ""}>By title</option>
         </select>
+        <label class="btn"><input type="checkbox" id="here" ${f.here ? "checked" : ""}> 📖 Readable here</label>
       </div>
       <div class="count" id="count"></div>
       <div class="grid" id="books"></div>
@@ -204,6 +210,7 @@
         if (f.school && !b.schools.includes(f.school)) return false;
         if (f.topic && !b.topics.includes(f.topic)) return false;
         if (f.author && b.author !== f.author) return false;
+        if (f.here && !TEXTS[b.id]) return false;
         if (f.status === "none" && st) return false;
         if (f.status && f.status !== "none" && st !== f.status) return false;
         if (q) {
@@ -218,13 +225,14 @@
       $("#books").innerHTML = list.length ? list.map(bookCard).join("") : `<div class="empty">No books match. Try clearing a filter.</div>`;
       // keep filters in the URL so links are shareable and Back works
       const p = new URLSearchParams();
-      Object.entries(f).forEach(([k, v]) => { if (v && !(k === "sort" && v === "year")) p.set(k, v); });
+      Object.entries(f).forEach(([k, v]) => { if (v && !(k === "sort" && v === "year")) p.set(k, v === true ? "1" : v); });
       const qs = p.toString();
       history.replaceState(null, "", "#/library" + (qs ? "?" + qs : ""));
     };
     $("#q").addEventListener("input", (e) => { f.q = e.target.value; render(); });
     ["era", "tradition", "school", "topic", "author", "status", "sort"].forEach((k) =>
       $("#" + k).addEventListener("change", (e) => { f[k] = e.target.value; render(); }));
+    $("#here").addEventListener("change", (e) => { f.here = e.target.checked; render(); });
     render();
   }
 
@@ -242,6 +250,10 @@
           <div class="by">${esc(b.author)}</div>
           <div>${b.schools.map((s) => `<a class="tag accent" href="#/library?school=${encodeURIComponent(s)}">${esc(s)}</a>`).join("")}${b.topics.map((t) => `<a class="tag" href="#/library?topic=${encodeURIComponent(t)}">${esc(t)}</a>`).join("")}</div>
           <p style="margin-top:16px;font-size:1.05rem">${esc(b.summary)}</p>
+          ${TEXTS[b.id] ? `<div class="read-cta">
+            <a class="btn primary" href="#/read/${b.id}">📖 ${progressOf(id) ? "Continue reading (" + progressOf(id) + "%)" : "Read it here"}</a>
+            <span class="muted">${TEXTS[b.id].words.toLocaleString()} words · about ${readMins(TEXTS[b.id].words)} · from ${esc(TEXTS[b.id].source)}</span>
+          </div>` : `<p class="muted" style="margin-top:14px">Full text not downloaded into Logos yet. Use the free links on the right.</p>`}
           <div class="start"><b>Where to start:</b> ${esc(b.start)}</div>
           ${inDebates.length ? `<h3>Used in debates</h3><p>${inDebates.map((d) => `<a href="#/debate/${d.id}">${esc(d.title)}</a>`).join(" · ")}</p>` : ""}
           <h3 style="margin-top:24px">My notes</h3>
@@ -271,6 +283,98 @@
       toast(s.status ? "Marked: " + STATUS[s.status] : "Status cleared");
     }));
     bindNote($("#notes"), () => bookState(id), "notes", $("#hint"));
+  }
+
+  // ---------- Reader ----------
+  let readerCleanup = null;
+  function viewReader(id) {
+    const b = bookById[id];
+    const meta = TEXTS[id];
+    if (!b || !meta) return notFound();
+    const st = bookState(id);
+    const size = (() => { try { return +localStorage.getItem("logos.fontsize") || 20; } catch (e) { return 20; } })();
+    main.innerHTML = `
+      <div class="reader-bar">
+        <a class="back" href="#/book/${id}" style="margin:0">← ${esc(b.title)}</a>
+        <select id="toc" aria-label="Jump to section"><option value="">Contents…</option></select>
+        <div class="btn-row">
+          <button class="btn" type="button" id="smaller" aria-label="Smaller text">A−</button>
+          <button class="btn" type="button" id="bigger" aria-label="Bigger text">A+</button>
+        </div>
+      </div>
+      <div class="reader-progress" aria-hidden="true"><span id="prog"></span></div>
+      <article class="reader" id="reader" style="font-size:${size}px">
+        <header class="reader-head">
+          <div class="eyebrow">${esc(b.era)} · ${yearLabel(b.year)}</div>
+          <h1>${esc(b.title)}</h1>
+          <div class="by">${esc(b.author)}</div>
+          <p class="muted" style="font-size:.8rem;font-family:var(--sans)">Public-domain text from <a href="${esc(meta.url)}" target="_blank" rel="noopener">${esc(meta.source)}</a>. Your place is saved automatically.</p>
+        </header>
+        <div id="text"><p class="muted">Loading the book…</p></div>
+        <footer class="reader-end">
+          <p>You reached the end.</p>
+          <button class="btn primary" type="button" id="finish">Mark as finished</button>
+          <a class="btn" href="#/book/${id}">Write notes</a>
+        </footer>
+      </article>`;
+
+    if (location.protocol === "file:") {
+      $("#text").innerHTML = `<div class="empty">The reader needs the app to be opened from the website or a local server, not by double-clicking the file.<br>Run <code>python -m http.server 8321</code> in the Logos folder and open <a href="http://localhost:8321">localhost:8321</a>.</div>`;
+      return;
+    }
+
+    fetch("texts/" + id + ".html").then((r) => { if (!r.ok) throw new Error(r.status); return r.text(); }).then((htmlText) => {
+      if (location.hash.split("?")[0] !== "#/read/" + id) return; // user navigated away
+      const text = $("#text");
+      text.innerHTML = htmlText; // our own sanitized file (tools/fetch_texts.py allowlist)
+      // table of contents from headings
+      const heads = $$("h2, h3", text).filter((h) => h.textContent.trim().length > 0 && h.textContent.trim().length < 120);
+      heads.forEach((h, i) => { h.id = "s" + i; });
+      $("#toc").innerHTML = `<option value="">Contents (${heads.length})…</option>` +
+        heads.map((h, i) => `<option value="s${i}">${h.tagName === "H3" ? "  · " : ""}${esc(h.textContent.trim().replace(/\s+/g, " ").slice(0, 70))}</option>`).join("");
+      $("#toc").style.display = heads.length > 1 ? "" : "none";
+
+      const article = $("#reader");
+      const top = () => article.getBoundingClientRect().top + window.scrollY;
+      const frac = () => Math.min(1, Math.max(0, (window.scrollY - top()) / Math.max(1, article.offsetHeight - window.innerHeight)));
+      // restore place
+      if (st.pos) window.scrollTo(0, top() + st.pos * (article.offsetHeight - window.innerHeight));
+      let t;
+      const onScroll = () => {
+        const f = frac();
+        $("#prog").style.width = (f * 100).toFixed(1) + "%";
+        clearTimeout(t);
+        t = setTimeout(() => {
+          st.pos = Math.round(f * 1000) / 1000;
+          st.lastRead = Date.now();
+          if (!st.status && f > 0.01) st.status = "reading";
+          save();
+        }, 500);
+      };
+      window.addEventListener("scroll", onScroll, { passive: true });
+      readerCleanup = () => { window.removeEventListener("scroll", onScroll); clearTimeout(t); };
+      onScroll();
+    }).catch(() => {
+      $("#text").innerHTML = `<div class="empty">Couldn't load the book. If you're offline, open it once while online and it will be saved for next time.</div>`;
+    });
+
+    $("#toc").addEventListener("change", (e) => {
+      const el = document.getElementById(e.target.value);
+      if (el) window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 110);
+      e.target.value = "";
+    });
+    const setSize = (d) => {
+      const art = $("#reader");
+      const f = frac0();
+      const s = Math.min(28, Math.max(15, parseInt(art.style.fontSize, 10) + d));
+      art.style.fontSize = s + "px";
+      try { localStorage.setItem("logos.fontsize", s); } catch (e) {}
+      window.scrollTo(0, art.getBoundingClientRect().top + window.scrollY + f * (art.offsetHeight - window.innerHeight));
+    };
+    const frac0 = () => { const a = $("#reader"); const tp = a.getBoundingClientRect().top + window.scrollY; return Math.min(1, Math.max(0, (window.scrollY - tp) / Math.max(1, a.offsetHeight - window.innerHeight))); };
+    $("#smaller").addEventListener("click", () => setSize(-1));
+    $("#bigger").addEventListener("click", () => setSize(1));
+    $("#finish").addEventListener("click", () => { st.status = "finished"; st.updated = Date.now(); save(); toast("Finished! Nice work."); });
   }
 
   function viewResearch(params) {
@@ -545,16 +649,19 @@
     const params = new URLSearchParams(qs || "");
     const parts = path.split("/").filter(Boolean);
     const section = parts[0] || "";
-    $$(".nav a").forEach((a) => a.classList.toggle("active", a.dataset.nav === section || (section === "book" && a.dataset.nav === "library") || (section === "debate" && a.dataset.nav === "debates")));
+    if (readerCleanup) { readerCleanup(); readerCleanup = null; }
+    document.body.classList.toggle("reading-mode", section === "read");
+    $$(".nav a").forEach((a) => a.classList.toggle("active", a.dataset.nav === section || ((section === "book" || section === "read") && a.dataset.nav === "library") || (section === "debate" && a.dataset.nav === "debates")));
     if (!section) viewHome();
     else if (section === "library") viewLibrary(params);
     else if (section === "book") viewBook(parts[1]);
+    else if (section === "read") viewReader(parts[1]);
     else if (section === "research") viewResearch(params);
     else if (section === "debates") viewDebates();
     else if (section === "debate") viewDebate(parts[1]);
     else if (section === "notes") viewNotes();
     else notFound();
-    const titles = { library: "Library", book: (bookById[parts[1]] || {}).title, research: "Research", debates: "Debates", debate: (debateById[parts[1]] || {}).title, notes: "My notes" };
+    const titles = { library: "Library", book: (bookById[parts[1]] || {}).title, read: (bookById[parts[1]] || {}).title, research: "Research", debates: "Debates", debate: (debateById[parts[1]] || {}).title, notes: "My notes" };
     document.title = titles[section] ? titles[section] + " · Logos" : "Logos";
   }
   let lastPath = null;
@@ -578,4 +685,9 @@
 
   lastPath = location.hash.split("?")[0];
   route();
+
+  // Offline support (only works on http/https, not when opened as a file)
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
 })();

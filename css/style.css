@@ -283,3 +283,39 @@ textarea.small { min-height: 70px; }
   transition: opacity .2s, transform .2s; pointer-events: none; z-index: 20; max-width: calc(100vw - 32px);
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- Reader ---------- */
+.read-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 18px 0 6px; font-size: .88rem; }
+.reader-bar {
+  position: sticky; top: 61px; z-index: 4; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 0; background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.reader-bar .back { flex: 1 1 160px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reader-bar select { padding: 7px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); max-width: 260px; min-width: 0; flex: 0 1 260px; }
+.reader-bar .btn { padding: 6px 11px; }
+.reader-progress { position: sticky; top: 118px; z-index: 4; height: 3px; background: var(--line); }
+.reader-progress span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+.reader { max-width: 40em; margin: 0 auto; padding: 36px 0 24px; font-family: var(--serif); line-height: 1.7; overflow-wrap: break-word; }
+.reader-head { text-align: center; margin-bottom: 2.4em; padding-bottom: 1.6em; border-bottom: 1px solid var(--line); }
+.reader-head .eyebrow { font-family: var(--sans); }
+.reader-head h1 { font-size: 2.2em; }
+.reader-head .by { font-size: 1.2em; color: var(--ink-soft); margin-bottom: .6em; }
+.reader #text h1, .reader #text h2 { font-size: 1.45em; margin: 2.2em 0 .8em; text-align: center; }
+.reader #text h3, .reader #text h4, .reader #text h5 { font-size: 1.15em; margin: 1.8em 0 .6em; }
+.reader #text p { margin: 0 0 1em; text-align: left; hyphens: auto; }
+.reader #text blockquote { margin: 1.2em 1.4em; color: var(--ink-soft); }
+.reader #text hr { border: 0; text-align: center; margin: 2em 0; }
+.reader #text hr::after { content: "⁂"; color: var(--ink-faint); }
+.reader #text table { border-collapse: collapse; margin: 1em 0; font-size: .9em; display: block; overflow-x: auto; max-width: 100%; }
+.reader #text td, .reader #text th { border: 1px solid var(--line); padding: 4px 8px; vertical-align: top; }
+.reader #text pre { white-space: pre-wrap; font-family: var(--serif); }
+.reader #text sup { font-size: .7em; line-height: 0; }
+.reader-end { text-align: center; padding: 40px 0 10px; margin-top: 40px; border-top: 1px solid var(--line); font-family: var(--sans); font-size: 1rem; }
+.reader-end .btn { margin: 4px; }
+body.reading-mode .footer { display: none; }
+@media (max-width: 640px) {
+  .reader-bar { top: 97px; }
+  .reader-progress { top: 152px; }
+  .reader-bar select { flex: 1 1 100%; max-width: none; order: 3; }
+  .reader { padding-top: 20px; }
+}

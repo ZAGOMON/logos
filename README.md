@@ -8,6 +8,16 @@ A small web app for going deep into philosophy:
 
 **Live:** https://zagomon.github.io/logos/
 
+## Built-in reader
+
+Books are downloaded into `texts/` so you can read them inside Logos, with your place saved, a table of contents, text size controls, and offline reading for any book you've opened once. To download (or re-try) the full texts:
+
+```bash
+python -I tools/fetch_texts.py
+```
+
+It only fetches what's missing and is polite to the source sites (Standard Ebooks first, then Wikisource, then Project Gutenberg).
+
 ## Free and legal only
 
 - Books link to Project Gutenberg, Standard Ebooks, Wikisource and Internet Archive (public-domain items).
